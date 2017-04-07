@@ -1,0 +1,106 @@
+_templates:
+- &Image gcr.io/orbitera-dev/rabbitmq3
+- &Image rabbitmq3
+- &PullCommand gcloud docker -- pull gcr.io/orbitera-dev/rabbitmq3
+- &BaseRun
+  name: rabbitmq
+  image: *Image
+  exposedPorts:
+  - port: 4369
+    mapped: 4369
+  - port: 5671
+    mapped: 5671
+  - port: 5672
+    mapped: 5672
+  - port: 25672
+    mapped: 25672
+  environment:
+    RABBITMQ_ERLANG_COOKIE:
+      value: unique-erlang-cookie
+- &RabbitmqCtl
+  name: ctl
+  image: *Image
+  runType: INTERACTIVE_SHELL
+  environment:
+    RABBITMQ_ERLANG_COOKIE:
+      value: unique-erlang-cookie
+
+overview:
+  description: |-
+    This image contains an installation of RabbitMQ, open-source message broker.
+    [Official Image Launcher Page](https://console.cloud.google.com/launcher/details/google/rabbitmq3).
+  dockerfileUrl: https://github.com/GoogleCloudPlatform/rabbitmq-docker/tree/master/3.6/
+  pullCommand: *PullCommand
+
+taskGroups:
+- title: How to use RabbitMQ server instance
+  description: This section describes how to spin up a RabbitMQ service using this image.
+  tasks:
+  - title: Start single RabbitMQ container
+    description: >-
+    runtimes: [DOCKER, KUBERNETES]
+    instructions:
+    - run:
+        <<: *BaseRun
+    - description: >-
+        RabbitMQ will be accessible on your localhost using on ports 5671, 5672 or by
+        rabbtmqctl binary.
+      applicableRuntimes: [DOCKER, KUBERNETES]
+    - description: >-
+        For information about how to retain your RabbitMQ data across
+        restarts, see [](#run-with-persistent-data-volumes).
+  - title: Conncect to RabbitMQ using rabbitmqctl
+    description: >-
+    runtimes: [DOCKER, KUBERNETES]
+    instructions:
+    - run:
+        <<: *RabbitmqCtl
+        arguments:
+        - /bin/bash
+    - description: >-
+        For remote/cross-container administration via rabbitmqctl you should set
+        RABBITMQ_ERLANG_COOKIE. And run "rabbitmqctl"
+      applicableRuntimes: [DOCKER, KUBERNETES]
+  - title: Run with persistent data volumes
+    runtimes: [DOCKER, KUBERNETES]
+    anchorId: run-with-persistent-data-volumes
+    instructions:
+    - description: >-
+        We can store data on persistent volumes, this way the installation
+        remains intact across restarts. Assume that `/var/lib/rabbitmq`
+        is the persistent directory on the host.
+      applicableRuntimes: [DOCKER]
+    - description: >-
+        We can store data on persistent volumes, this way the
+        installation remains intact across restarts.
+      applicableRuntimes: [KUBERNETES]
+    - run:
+        <<: *BaseRun
+        volumes:
+        - name: rabbitmq-data
+          path: /var/lib/rabbitmq
+          emptyPersistentVolume:
+            hostPath: /var/lib/docker/volumes
+
+portReference:
+  ports:
+  - port: '4369'
+    description:  a peer discovery service used by RabbitMQ nodes and CLI tools
+  - port: '5671'
+    description: AMQP 0-9-1 and 1.0 clients without TLS
+  - port: '5672'
+    description: AMQP 0-9-1 and 1.0 clients with TLS
+  - port: '25672'
+    description: used by Erlang distribution for inter-node and CLI tools communication
+environmentVariableReference:
+  variables:
+  - name: RABBITMQ_ERLANG_COOKIE
+    description: >-
+      RabbitMQ nodes and CLI tools (e.g. rabbitmqctl) use a cookie to determine
+      whether they are allowed to communicate with each other. For two nodes to be
+      able to communicate they must have the same shared secret called the Erlang
+      cookie.
+volumeReference:
+  volumes:
+  - path: /var/lib/rabbitmq
+    description: All RabbitMQ files are installed here.
