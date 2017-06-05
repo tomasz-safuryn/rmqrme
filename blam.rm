@@ -1,0 +1,58 @@
+# C2D Deployment Configuration
+
+## Background
+
+Due to incomplete support of autogen specs in Partner Portal Wizard UI, we
+source control the autogen specs and upload them into the Wizard. Each solution
+has a folder under this directory with a file named `autogen.yaml`.
+
+Our source control uses YAML while the UI expects JSON, this is because YAML is
+easier to maintain.
+
+Also go/vm-factory-guide.
+
+## Autogen spec
+
+See [the proto][autogen_proto].
+
+## YAML/JSON conversion
+
+### YAML to JSON conversion
+
+This is for pasting the configuration into Partner Portal.
+
+```
+cat autogen.yaml | python -c 'import json, sys, yaml; print json.dumps(yaml.load(sys.stdin), sort_keys=True, indent=2)'
+```
+
+You can copy the content into the clipboard by using:
+
+  - `| xclip -selection clipboard` if you're on Ubuntu.
+  - `| pbcopy` if you're on a Mac.
+
+```
+cat autogen.yaml | python -c 'import json, sys, yaml; print json.dumps(yaml.load(sys.stdin), sort_keys=True, indent=2)' | xclip -selection clipboard
+
+cat autogen.yaml | python -c 'import json, sys, yaml; print json.dumps(yaml.load(sys.stdin), sort_keys=True, indent=2)' | pbcopy
+```
+### JSON to YAML conversion
+
+This is typically only done once to download the initial spec from the wizard.
+
+```
+cat autogen.json | python -c 'import json, sys, yaml; print yaml.safe_dump(json.load(sys.stdin), default_flow_style=False)'
+```
+
+Replace `cat autogen.json` with content from the clipboard by using:
+
+  - `xclip -o` if you're on Ubuntu.
+  - `pbpaste` if you're on a Mac.
+
+```
+xclip -o | python -c 'import json, sys, yaml; print yaml.safe_dump(json.load(sys.stdin), default_flow_style=False)' > autogen.yaml
+
+pbpaste | python -c 'import json, sys, yaml; print yaml.safe_dump(json.load(sys.stdin), default_flow_style=False)' > autogen.yaml
+```
+
+
+[autogen_proto]: http://google3/java/com/google/cloud/marketplace/be/dm/autogen/deployment_package_autogen_spec.proto
